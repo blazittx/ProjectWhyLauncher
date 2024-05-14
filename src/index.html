@@ -14,31 +14,17 @@
     <div class="hydra">
       <div class="hydra_rebooting">
         <p id="status-message">&lt; SYSTEM REBOOTING &gt;</p>
-        <p class="text--sm">HYDRA VER 2.1 SYS RECOVERY</p>
+        <p class="text--sm">PROJECTWHY VER 2.1 SYS RECOVERY</p> 
         <p class="text--sm">PROCESS: <span class="process-amount">0</span>%</p>
         <p class="loading-bar"><span id="progress-bar">[....................]</span></p>
       </div>
       <div id="reboot-success" class="hydra_reboot_success hidden">
-        <p>REBOOTING SUCCESSFUL</p>
+        <p>LAUNCHING GAME</p>
       </div>
     </div>
   </div>
 
   <script src="./js/renderer.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      window.electronAPI.onUpdateStatus((event, message) => {
-        document.getElementById('status-message').innerText = message;
-      });
-
-      window.electronAPI.onDownloadProgress((event, progress) => {
-        const loaded = '#'.repeat(Math.floor(progress / 5));
-        const unloaded = '.'.repeat(20 - loaded.length);
-        document.getElementById('progress-bar').innerText = `[${loaded}${unloaded}]`;
-        document.querySelector('.process-amount').innerText = progress;
-      });
-    });
-  </script>
 </body>
 
 </html>

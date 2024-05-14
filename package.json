@@ -2,14 +2,14 @@
   "name": "diabolicallauncher",
   "productName": "Diabolical Launcher",
   "version": "0.0.0",
-  "description": "Launcher for the Diabolical Studios games",
+  "description": "Launcher for ProjectWhy",
   "main": "src/index.js",
   "scripts": {
     "start": "set ELECTRON_IS_DEV=0 && electron .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },
-  "repository": "https://github.com/Diabolical-Studios/DiabolicalGameLauncher",
+  "repository": "https://github.com/Diabolical-Studios/ProjectWhyLauncher",
   "publish": {
     "provider": "github",
     "releaseType": "release"
@@ -53,7 +53,7 @@
     "electron-squirrel-startup": "^1.0.0",
     "electron-updater": "^6.1.8",
     "extract-zip": "^2.0.1",
-    "node-fetch": "^3.3.2",
+    "node-fetch": "^2.7.0",
     "oracledb": "^6.4.0",
     "update-electron-app": "^3.0.0"
   },
