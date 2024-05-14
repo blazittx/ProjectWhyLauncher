@@ -1,0 +1,64 @@
+{
+  "name": "diabolicallauncher",
+  "productName": "Diabolical Launcher",
+  "version": "0.0.0",
+  "description": "Launcher for the Diabolical Studios games",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "set ELECTRON_IS_DEV=0 && electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "repository": "https://github.com/Diabolical-Studios/DiabolicalGameLauncher",
+  "publish": {
+    "provider": "github",
+    "releaseType": "release"
+  },
+  "build": {
+    "appId": "com.yourdomain.diabolicallauncher",
+    "productName": "Diabolical Launcher",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "icons/icon.ico",
+      "artifactName": "${productName} Setup.${ext}"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "icons/icon.icns",
+      "artifactName": "${productName}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "icons",
+      "artifactName": "${productName}.${ext}"
+    }
+  },
+  "keywords": [],
+  "author": "doruksasmaz",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.8",
+    "dotenv": "^16.4.5",
+    "electron-dl": "^3.5.2",
+    "electron-is-dev": "^3.0.1",
+    "electron-squirrel-startup": "^1.0.0",
+    "electron-updater": "^6.1.8",
+    "extract-zip": "^2.0.1",
+    "node-fetch": "^3.3.2",
+    "oracledb": "^6.4.0",
+    "update-electron-app": "^3.0.0"
+  },
+  "devDependencies": {
+    "electron": "^30.0.2",
+    "electron-builder": "^24.13.3"
+  }
+}
