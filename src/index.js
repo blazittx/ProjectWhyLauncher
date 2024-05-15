@@ -4,9 +4,8 @@ const path = require('path');
 const os = require('os');
 const { download } = require('electron-dl');
 const extract = require('extract-zip');
-const { spawn, execFileSync } = require('child_process');
 const fetch = require('node-fetch');
-const crypto = require('crypto');
+const bsdiff = require('bsdiff-node');
 
 let mainWindow;
 
@@ -38,7 +37,6 @@ const createWindow = () => {
 const diabolicalLauncherPath = path.join(os.homedir(), 'AppData', 'Local', 'Diabolical Launcher');
 const gameInstallPath = path.join(diabolicalLauncherPath, 'ProjectWhy');
 const versionFilePath = path.join(gameInstallPath, 'version.txt');
-const pathToXdelta3 = path.join(__dirname, 'bin', 'xdelta3.exe'); // Use the local xdelta3 executable
 
 async function extractZip(zipPath, extractPath) {
   try {
@@ -89,10 +87,10 @@ function getInstalledVersion() {
 
 async function downloadPatch(patchUrl) {
   mainWindow.webContents.send('update-status', 'Downloading patch...');
-  const patchFilePath = path.join(diabolicalLauncherPath, 'patch.vcdiff');
+  const patchFilePath = path.join(diabolicalLauncherPath, 'patch.bsdiff');
   await download(mainWindow, patchUrl, {
     directory: diabolicalLauncherPath,
-    filename: 'patch.vcdiff',
+    filename: 'patch.bsdiff',
     onProgress: (progress) => {
       const progressPercentage = Math.round(progress.percent * 100);
       mainWindow.webContents.send('download-progress', progressPercentage);
@@ -101,12 +99,15 @@ async function downloadPatch(patchUrl) {
   return patchFilePath;
 }
 
-function verifyFile(filePath, expectedHash) {
-  const fileBuffer = fs.readFileSync(filePath);
-  const hashSum = crypto.createHash('sha1');
-  hashSum.update(fileBuffer);
-  const hex = hashSum.digest('hex');
-  return hex === expectedHash;
+async function applyPatch(patchFilePath) {
+  mainWindow.webContents.send('update-status', 'Applying patch...');
+  const oldFile = fs.readFileSync(path.join(gameInstallPath, 'StandaloneWindows64.exe'));
+  const patch = fs.readFileSync(patchFilePath);
+  const newFile = Buffer.alloc(oldFile.length); // Adjust the length if needed
+
+  await bsdiff.patch(oldFile, newFile, patch);
+  fs.writeFileSync(path.join(gameInstallPath, 'StandaloneWindows64.exe'), newFile);
+  fs.unlinkSync(patchFilePath); // Delete the patch file after applying
 }
 
 async function downloadAndOpenGame() {
@@ -123,30 +124,15 @@ async function downloadAndOpenGame() {
 
     if (installedVersion) {
       // If there's an installed version, attempt to download and apply the patch
-      const patchUrl = `https://frks8kdvmjog.objectstorage.eu-frankfurt-1.oci.customer-oci.com/p/suRf4hOSm9II9YuoH_LuoZYletMaP59e2cIR1UXo84Pa6Hi26oo5VlWAT_XDt5R5/n/frks8kdvmjog/b/DiabolicalGamesStorage/o/ProjectWhy/Patches/Patch-StandaloneWindows64-${installedVersion}-to-${latestVersion}.vcdiff`;
+      const patchUrl = `https://frks8kdvmjog.objectstorage.eu-frankfurt-1.oci.customer-oci.com/p/suRf4hOSm9II9YuoH_LuoZYletMaP59e2cIR1UXo84Pa6Hi26oo5VlWAT_XDt5R5/n/frks8kdvmjog/b/DiabolicalGamesStorage/o/ProjectWhy/Patches/Patch-StandaloneWindows64-${installedVersion}-to-${latestVersion}.bsdiff`;
       try {
         const patchFilePath = await downloadPatch(patchUrl);
-
-        // Verify the source file size and integrity
-        const sourceFilePath = path.join(gameInstallPath, 'StandaloneWindows64.exe');
-        const sourceFileStats = fs.statSync(sourceFilePath);
-        console.log(`Source file size: ${sourceFileStats.size} bytes`);
-        if (sourceFileStats.size < 1000) { // Arbitrary minimum size for sanity check
-          throw new Error('Source file is too small, likely corrupted');
-        }
-
-        applyPatch(patchFilePath);
-
-        // Verify the patched file
-        const expectedHash = 'expected_sha1_hash_of_the_new_version'; // Replace with the actual expected hash
-        const executablePath = path.join(gameInstallPath, 'StandaloneWindows64.exe');
-        if (!verifyFile(executablePath, expectedHash)) {
-          throw new Error('Patched file verification failed');
-        }
+        await applyPatch(patchFilePath);
 
         // Write the latest version to version.txt
         fs.writeFileSync(versionFilePath, latestVersion);
-        mainWindow.webContents.send('update-status', 'Patch applied and verified. Launching game...');
+        mainWindow.webContents.send('update-status', 'Patch applied. Launching game...');
+        const executablePath = path.join(gameInstallPath, 'StandaloneWindows64.exe');
         launchGame(executablePath);
         mainWindow.webContents.send('download-complete');
         return;
@@ -188,18 +174,6 @@ async function downloadAndOpenGame() {
   } catch (error) {
     mainWindow.webContents.send('update-status', 'Error occurred');
     console.error('Download or Extraction error:', error);
-  }
-}
-
-function applyPatch(patchFilePath) {
-  try {
-    mainWindow.webContents.send('update-status', 'Applying patch...');
-    console.log(`Applying patch from ${patchFilePath}`);
-    execFileSync(pathToXdelta3, ['-d', '-s', path.join(gameInstallPath, 'StandaloneWindows64.exe'), patchFilePath, path.join(gameInstallPath, 'StandaloneWindows64.exe')]);
-    fs.unlinkSync(patchFilePath); // Delete the patch file after applying
-  } catch (error) {
-    console.error('Failed to apply patch:', error);
-    throw error;
   }
 }
 
